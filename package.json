@@ -1,0 +1,32 @@
+{
+  "name": "js-ko-property-grid",
+  "version": "0.0.0",
+  "description": "property grid component for knockout",
+  "main": "index.js",
+  "scripts": {
+    "lint": "jshint index.js",
+    "hint": "npm run lint"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tsu-complete/js-ko-property-grid.git"
+  },
+  "keywords": [
+    "property",
+    "grid",
+    "component",
+    "knockout"
+  ],
+  "author": "tsukumo",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/tsu-complete/js-ko-property-grid/issues"
+  },
+  "homepage": "https://github.com/tsu-complete/js-ko-property-grid#readme",
+  "devDependencies": {
+    "jshint": "^2.8.0"
+  },
+  "dependencies": {
+    "knockout": "^3.3.0"
+  }
+}
