@@ -8,8 +8,19 @@
     <link rel="stylesheet" href="lib/bootstrap.min.css" />
     <link rel="stylesheet" href="lib/flat-ui.min.css" />
     <link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Satisfy" />
+    <link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Roboto+Mono" />
 
     <style role="overrides">
+        html, body {
+            margin: 0;
+            height: 100%;
+            overflow: hidden;
+        }
+        ul {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
         body > .navbar {
             background: #ECF0F1;
         }
@@ -23,12 +34,149 @@
             margin-right: 20px;
         }
 
+        .schema,
+        .property-grid
+        {
+            position: relative;
+            box-sizing: border-box;
+            height: 100%;
+            width: 50%;
+            display: inline-block;
+            float:left;
+            padding-top: 52px;
+            outline: 1px solid #ECF0F1;
+        }
+        .schema > header,
+        .property-grid > header {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 100%;
+        }
+        .schema > header .title,
+        .property-grid > header .title {
+            background: #ECF0F1;
+            font-size: 14px;
+            border-top-left-radius: 4px;
+            z-index: 10;
+            float: right;
+            padding: 2px 15px;
+        }
+        .error {
+            padding: 2px 15px;
+            font-size: 12px;
+            z-index: 5;
+            color: white;
+            float: left;
+            display: block;
+            width: 100%;
+        }
+
+        .schema textarea {
+            width: 100%;
+            height: 100%;
+            resize: none;
+            border: 0;
+            outline: 0;
+            box-shadow: none;
+            font-family: "Roboto Mono";
+        }
+
+        [group] > header {
+            min-height: 18px;
+            font-size: 16px;
+            padding: 2px 15px;
+            background-color: #BDC3C7;
+        }
+
+        [group] label {
+            width: 20%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            background-color: #D1D5D8;
+            margin-bottom: 0;
+            font-size: 14px;
+            padding: 2px 15px;
+            text-align: right;
+        }
+
+        [group] li input,
+        [group] li span{
+            width: 80%;
+            padding: 2px 15px;
+            border: 0;
+            font-size: 14px;
+            box-shadow: none;
+            outline: 0;
+        }
+
+        [group] li {
+            box-shadow: 0 1px 0 0 #BDC3C7;
+            margin-bottom: 1px;
+            position: relative;
+        }
+
+        li:after {
+            position: absolute;
+            display: block;
+            right: 3px;
+            top: 3px;
+            font-size: 11px;
+            border-radius: 2px;
+            padding: 1px 6px;
+            border: 1px solid #2c3e50;
+            text-shadow: 0 0 1px black;
+            color: white;
+            font-family: "Roboto Mono";
+        }
+        li[type="string"]:after {
+            content: "S";
+            background-color: #e67e22;
+        }
+        li[type="number"]:after {
+            content: "N";
+            background-color: #3498db;
+        }
+        li[type="boolean"]:after {
+            content: "B";
+            background-color: #9b59b6;
+        }
+        li[type="object"]:after {
+            content: "O";
+            background-color: #e74c3c;
+        }
+        li[type="function"]:after {
+            content: "F";
+            background-color: #1abc9c;
+        }
+
         .coming-soon {
              font-size: 10vw;
              color: #D1D5D8;
              font-family: Satisfy;
              text-align: center;
              margin-top: 20vh;
+        }
+
+        .instructions {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #2c3e50;
+            display: none;
+        }
+        .instructions > span {
+            position: absolute;
+            top: 50%;
+            text-align:center;
+            transform: translate(0, -50%);
+            width: 100%;
+            font-family: Satisfy;
+            font-size: 5vw;
+            color: white;
         }
     </style>
 
@@ -63,16 +211,114 @@
             </ul>
         </div>
     </nav>
-    <section class="coming-soon">
-        Comming Soon
+    <section class="schema">
+        <header>
+            <span class="title">Schema</span>
+            <!-- ko if: error() -->
+                <span class="error palette-alizarin" data-bind="text:error"></span>
+            <!-- /ko -->
+        </header>
+        <textarea data-bind="value:schema,valueUpdate:'keyup'">
+        </textarea>
+        <div class="instructions left">
+            <span>Type Here</span>
+        </div>
+    </section>
+    <section class="property-grid">
+        <header><span class="title">Property Grid</span></header>
+        <div data-bind="component:{name:'property-grid',params:{
+            schema: _schema
+        }}">
+        </div>
+        <div class="instructions right">
+            <span>Changes update automagically</span>
+        </div>
     </section>
 
     <script src="lib/jquery.js"></script>
     <script src="lib/flat-ui.min.js"></script>
 
     <script src="lib/knockout.debug.js"></script>
+    <script src="lib/underscore.js"></script>
+    <script src="https://rawgit.com/tsu-complete/js-ko-property-grid/master/index.js"></script>
     <script>
-        //ko.applyBindings();
+    (function ( ) {
+        "use strict";
+
+        var schema, error, storage;
+
+        storage = {
+            get: function ( key ) {
+                var ls = window.localStorage || window.localstorage;
+                if (ls) {
+                    return ls[key];
+                }
+            }
+        ,   set: function ( key, value ) {
+                var ls = window.localStorage || window.localstorage;
+                if (ls) {
+                    ls[key] = value;
+                }
+            }
+        };
+
+        schema = ko.observable(storage.get("_pg_cache") || JSON.stringify(
+            {
+                a: {
+                    type: "string"
+                ,   title: "Field A"
+                }
+            ,   b: {
+                    group: "First Group"
+                ,   value: 42
+                }
+            ,   c: {
+                    type: "boolean"
+                ,   group: "First Group"
+                }
+            ,   d: {
+                    value: { }
+                }
+            ,   e: {
+                    group: "Second Group"
+                ,   title: "E"
+                ,   type: "function"
+                }
+            }
+        , null, 2));
+        error = ko.observable(null);
+
+        window.onerror = function ( e ) {
+            error(e);
+        };
+
+        ko.applyBindings({
+            schema: schema
+        ,   error: error
+        ,  _schema: ko.computed(function ( ) {
+                var result = [ ], value = schema();
+                storage.set("_pg_cache", value);
+                try {
+                    result = JSON.parse(value);
+                    error(null);
+                } catch ( ex ) {
+                    error(ex);
+                } finally {
+                    return result;
+                }
+            })
+        });
+
+        if (!localStorage["_pg_seen"]) {
+            $(".instructions.left").delay(400).fadeIn(500, function () {
+                $(this).delay(1000).fadeOut(1000);
+            });
+            $(".instructions.right").delay(2400).fadeIn(500, function () {
+                $(this).delay(1000).fadeOut(1000);
+            });
+            localStorage["_pg_seen"] = true;
+        }
+    })();
     </script>
 </body>
 </html>
