@@ -1,11 +1,12 @@
 {
-  "name": "js-ko-property-grid",
+  "name": "ko-property-grid",
   "version": "0.0.0",
   "description": "property grid component for knockout",
   "main": "index.js",
   "scripts": {
     "lint": "jshint index.js",
-    "hint": "npm run lint"
+    "hint": "npm run lint",
+    "docs": "jsdoc index.js readme.md package.json"
   },
   "repository": {
     "type": "git",

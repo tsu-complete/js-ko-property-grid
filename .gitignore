@@ -82,3 +82,6 @@ Session.vim
 .netrwhist
 *~
 
+### User Defined ###
+/out
+
